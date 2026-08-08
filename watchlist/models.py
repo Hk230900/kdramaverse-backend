@@ -17,6 +17,7 @@ class WatchlistItem(models.Model):
     total_episodes = models.IntegerField(default=0)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='plan_to_watch')
     current_episode = models.IntegerField(default=0)
+    season_progress = models.JSONField(default=dict, blank=True)
     user_rating = models.FloatField(null=True, blank=True)
     added_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
