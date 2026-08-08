@@ -25,6 +25,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
     security_question = models.CharField(max_length=255, default='What is your favorite K-Drama?')
     security_answer = models.CharField(max_length=255, default='')
+    deletion_requested_at = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
