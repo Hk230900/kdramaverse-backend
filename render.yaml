@@ -2,6 +2,7 @@ services:
   - type: web
     name: kdramaverse-backend
     env: python
+    plan: free
     buildCommand: "./build.sh"
     startCommand: "gunicorn kdramaverse_backend.wsgi:application"
     envVars:
