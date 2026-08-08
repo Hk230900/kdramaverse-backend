@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import permissions
 from .tmdb_service import (
     search_kdramas, get_popular_kdramas, get_top_rated_kdramas,
-    get_drama_detail, get_trending_kdramas, get_drama_by_genre, format_drama
+    get_drama_detail, get_trending_kdramas, get_drama_by_genre, format_drama, get_season_detail
 )
 
 
@@ -85,6 +85,16 @@ class DramaDetailView(APIView):
                 similar_list.append(format_drama(s))
         drama['similar'] = similar_list[:6]
         return Response(drama)
+
+
+class SeasonDetailView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, tmdb_id, season_number):
+        data = get_season_detail(tmdb_id, season_number)
+        if not data:
+            return Response({'error': 'Season not found'}, status=404)
+        return Response(data)
 
 
 class GenreDramasView(APIView):

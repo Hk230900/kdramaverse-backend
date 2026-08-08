@@ -158,3 +158,47 @@ def format_drama(item):
             } for s in item.get('seasons', []) if s.get('season_number', 0) > 0
         ] if 'seasons' in item else []
     }
+
+def get_season_detail(tmdb_id, season_number):
+    try:
+        resp = requests.get(
+            f'{TMDB_BASE_URL}/tv/{tmdb_id}/season/{season_number}',
+            headers=get_headers(),
+            params={'language': 'en-US', 'append_to_response': 'credits'},
+            timeout=5
+        )
+        if not resp.ok:
+            return None
+        data = resp.json()
+        
+        episodes = []
+        for ep in data.get('episodes', []):
+            episodes.append({
+                'episode_number': ep.get('episode_number'),
+                'name': ep.get('name'),
+                'overview': ep.get('overview'),
+                'air_date': ep.get('air_date'),
+                'runtime': ep.get('runtime'),
+                'vote_average': round(ep.get('vote_average', 0), 1),
+                'still_path': get_image_url(ep.get('still_path')),
+            })
+            
+        cast = []
+        for c in data.get('credits', {}).get('cast', [])[:15]:
+            cast.append({
+                'id': c.get('id'),
+                'name': c.get('name'),
+                'character': c.get('character'),
+                'profile_path': get_image_url(c.get('profile_path'))
+            })
+            
+        return {
+            'name': data.get('name'),
+            'overview': data.get('overview'),
+            'air_date': data.get('air_date'),
+            'poster_path': get_image_url(data.get('poster_path')),
+            'episodes': episodes,
+            'cast': cast
+        }
+    except Exception:
+        return None
