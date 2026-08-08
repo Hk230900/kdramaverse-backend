@@ -53,8 +53,9 @@ class DramaDetailView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request, tmdb_id):
-        data = get_drama_detail(tmdb_id)
-        if not data or 'id' not in data:
+        media_type = request.query_params.get('type', 'tv')
+        data = get_drama_detail(tmdb_id, media_type=media_type)
+        if not data:
             return Response({'error': 'Drama not found'}, status=404)
         drama = format_drama(data)
         # Add cast
