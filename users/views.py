@@ -43,3 +43,46 @@ class MeView(APIView):
     def get(self, request):
         serializer = UserSerializer(request.user, context={'request': request})
         return Response(serializer.data)
+
+
+class ForgotPasswordView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email')
+        if not email:
+            return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            user = User.objects.get(email=email)
+            return Response({'security_question': user.security_question})
+        except User.DoesNotExist:
+            return Response({'error': 'User with this email does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class ResetPasswordView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email')
+        security_answer = request.data.get('security_answer')
+        new_password = request.data.get('new_password')
+
+        if not all([email, security_answer, new_password]):
+            return Response({'error': 'Email, security answer, and new password are required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if user.security_answer.lower().strip() != security_answer.lower().strip():
+            return Response({'error': 'Incorrect security answer'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Basic validation (can use django validators here, but keeping it simple)
+        if len(new_password) < 6:
+            return Response({'error': 'Password must be at least 6 characters'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save()
+        return Response({'message': 'Password reset successful. You can now log in.'})

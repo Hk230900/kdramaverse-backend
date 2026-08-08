@@ -23,6 +23,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     name = models.CharField(max_length=150)
     bio = models.TextField(blank=True, default='')
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    security_question = models.CharField(max_length=255, default='What is your favorite K-Drama?')
+    security_answer = models.CharField(max_length=255, default='')
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
