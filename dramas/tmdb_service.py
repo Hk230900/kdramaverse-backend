@@ -15,6 +15,16 @@ def get_image_url(path, size='w500'):
         return None
     return f'{TMDB_IMAGE_BASE}/{size}{path}'
 
+import re
+import datetime
+
+def is_bl(item):
+    overview = (item.get('overview') or '').lower()
+    title = (item.get('name') or item.get('original_name') or '').lower()
+    if re.search(r'\bbl\b', title) or re.search(r'\bbl\b', overview) or 'boys love' in overview or 'boys love' in title:
+        return True
+    return False
+
 def search_kdramas(query, page=1):
     """Search TMDB for TV shows matching query, then filter to Korean dramas."""
     resp = requests.get(f'{TMDB_BASE_URL}/search/tv', headers=get_headers(), params={
@@ -26,14 +36,14 @@ def search_kdramas(query, page=1):
     if not resp.ok:
         return {}
     data = resp.json()
-    # Post-filter to Korean dramas (origin_country includes 'KR' or original_language is 'ko')
+    # Post-filter to Korean dramas and exclude BL
     all_results = data.get('results', [])
     kr_results = [
         r for r in all_results
-        if 'KR' in (r.get('origin_country') or []) or r.get('original_language') == 'ko'
+        if ('KR' in (r.get('origin_country') or []) or r.get('original_language') == 'ko') and not is_bl(r)
     ]
     # If filtering kills all results (e.g. user searched English synopsis), return unfiltered
-    data['results'] = kr_results if kr_results else all_results
+    data['results'] = kr_results if kr_results else [r for r in all_results if not is_bl(r)]
     return data
 
 def get_popular_kdramas(page=1):
@@ -41,6 +51,7 @@ def get_popular_kdramas(page=1):
         'with_origin_country': 'KR',
         'with_original_language': 'ko',
         'sort_by': 'popularity.desc',
+        'without_keywords': '260383,210024', # Boys Love, BL
         'page': page,
         'language': 'en-US'
     })
@@ -52,6 +63,7 @@ def get_top_rated_kdramas(page=1):
         'with_original_language': 'ko',
         'sort_by': 'vote_average.desc',
         'vote_count.gte': 100,
+        'without_keywords': '260383,210024',
         'page': page,
         'language': 'en-US'
     })
@@ -92,8 +104,16 @@ def get_drama_detail(tmdb_id):
     return data
 
 def get_trending_kdramas():
-    resp = requests.get(f'{TMDB_BASE_URL}/trending/tv/week', headers=get_headers(), params={
-        'language': 'en-US', 'with_origin_country': 'KR'
+    # TMDB trending doesn't support country filtering, causing 2 results.
+    # Instead, we fetch KDramas aired recently, sorted by popularity!
+    three_months_ago = (datetime.date.today() - datetime.timedelta(days=90)).strftime('%Y-%m-%d')
+    resp = requests.get(f'{TMDB_BASE_URL}/discover/tv', headers=get_headers(), params={
+        'with_origin_country': 'KR',
+        'with_original_language': 'ko',
+        'sort_by': 'popularity.desc',
+        'first_air_date.gte': three_months_ago,
+        'without_keywords': '260383,210024',
+        'language': 'en-US'
     })
     return resp.json() if resp.ok else {}
 
@@ -103,6 +123,7 @@ def get_drama_by_genre(genre_id, page=1):
         'with_origin_country': 'KR',
         'with_original_language': 'ko',
         'sort_by': 'popularity.desc',
+        'without_keywords': '260383,210024',
         'page': page,
         'language': 'en-US'
     })
