@@ -75,8 +75,15 @@ def get_drama_detail(tmdb_id, media_type='tv'):
     try:
         resp = requests.get(f'{TMDB_BASE_URL}/{media_type}/{tmdb_id}', headers=headers, params={'language': 'en-US'}, timeout=5)
         if not resp.ok:
-            return {}
+            if resp.status_code == 404 and media_type == 'tv':
+                media_type = 'movie'
+                resp = requests.get(f'{TMDB_BASE_URL}/{media_type}/{tmdb_id}', headers=headers, params={'language': 'en-US'}, timeout=5)
+                if not resp.ok:
+                    return {}
+            else:
+                return {}
         data = resp.json()
+        data['media_type'] = media_type # ensure media_type is returned
     except Exception:
         return {}
 
